@@ -6,7 +6,7 @@ const authRoutes = require('./routes/authRoutes.route');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
-
+const socketHandler = require('./socket/socketHandler')
 dotenv.config();
 connectDB();
 
@@ -25,11 +25,8 @@ app.use('/health', (req, res) => {
     res.status(200).json({ message: 'OK' })
 })
 
-// Socket.io setup (placeholder for now; we'll expand in Phase 2)
-io.on('connection', (socket) => {
-    console.log('User connected');
-    socket.on('disconnect', () => console.log('User disconnected'));
-});
+// Initializing Socket Handler
+socketHandler(io);
 
 const PORT = process.env.PORT || 5001;
 server.listen(PORT, '0.0.0.0', () => console.log(`Server running on port ${PORT}`));
