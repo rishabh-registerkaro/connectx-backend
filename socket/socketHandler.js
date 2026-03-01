@@ -3,11 +3,10 @@ module.exports = (io) => {
 
     io.on('connection', (socket) => {
         console.log('User connected', socket.id);
-
-        let currentRoomId = null; // ← track it here
+        let currentRoomId = null;
 
         socket.on('join-room', ({ roomId, userName }) => {
-            currentRoomId = roomId; // ← assign it
+            currentRoomId = roomId;
 
             if (!rooms[roomId]) rooms[roomId] = [];
 
@@ -16,22 +15,16 @@ module.exports = (io) => {
                 return;
             }
 
-            // rooms[roomId].push(socket.id);
-            rooms[roomId].push({ id: socket.id, userName })
+            rooms[roomId].push({ id: socket.id, userName });
             socket.join(roomId);
-            console.log(`User ${socket.id} joined room ${roomId} (${rooms[roomId].length}/2)`);
-
-            // socket.to(roomId).emit('user-joined', socket.id);
-            socket.to(roomId).emit('user-joined', userName)
+            console.log(`${userName} joined room ${roomId} (${rooms[roomId].length}/2)`);
 
             if (rooms[roomId].length === 2) {
-                io.to(roomId).emit('ready');
-                console.log(`Room ${roomId} ready – starting negotiation`);
-            }
-
-            const existingUser = rooms[roomId].find(user => user.id !== socket.id)
-            if (existingUser) {
-                socket.emit('user-joined', existingUser.userName)
+                const firstPeer = rooms[roomId][0];
+                socket.emit('existing-user', firstPeer.userName);   // → peer 2
+                io.to(firstPeer.id).emit('user-joined', userName);  // → peer 1
+                io.to(firstPeer.id).emit('ready');                  // → peer 1 only
+                console.log(`Room ready – only ${firstPeer.userName} creates offer`);
             }
         });
 
@@ -49,8 +42,6 @@ module.exports = (io) => {
 
         socket.on('disconnect', () => {
             if (!currentRoomId) return;
-            // ✅ Change to this (filter by user.id now):
-            // rooms[currentRoomId] = rooms[currentRoomId]?.filter(id => id !== socket.id) || [];
             rooms[currentRoomId] = rooms[currentRoomId]?.filter(user => user.id !== socket.id) || [];
             if (rooms[currentRoomId]?.length === 0) delete rooms[currentRoomId];
             socket.to(currentRoomId).emit('user-disconnected');
