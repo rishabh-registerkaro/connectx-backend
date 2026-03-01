@@ -14,7 +14,9 @@ const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
     cors: { origin: '*' },
-    transports: ["websocket"]
+    transports: ["websocket"],
+    pingTimeout: 60000,   // ← ADD
+    pingInterval: 25000,  // ← ADD
 });  // For now, open CORS; tighten later
 
 app.use(helmet());
