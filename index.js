@@ -12,7 +12,10 @@ connectDB();
 
 const app = express();
 const server = http.createServer(app);
-const io = socketio(server, { cors: { origin: '*' } });  // For now, open CORS; tighten later
+const io = socketio(server, {
+    cors: { origin: '*' },
+    transports: ["websocket"]
+});  // For now, open CORS; tighten later
 
 app.use(helmet());
 app.use(cors({
