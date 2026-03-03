@@ -14,15 +14,15 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
-    cors: { 
+    cors: {
         origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-        credentials: true 
+        credentials: true
     },
     transports: ["websocket"],
     pingTimeout: 60000,   // ← ADD
     pingInterval: 25000,  // ← ADD
 });
-
+// hello world
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
