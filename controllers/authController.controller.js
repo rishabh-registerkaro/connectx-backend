@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const cookieOptions = {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax',
+    sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
     maxAge: 3600000
 }
 
@@ -47,7 +47,11 @@ const login = async (req, res) => {
 
 // Add logout functions to clear the cookie
 const logout = (req, res) => {
-    res.clearCookie('token');
+    res.clearCookie('token', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+    });
     res.status(200).json({
         msg: "Logged Out Successfully"
     });
