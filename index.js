@@ -4,6 +4,7 @@ const socketio = require('socket.io');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes.route');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const socketHandler = require('./socket/socketHandler')
@@ -13,16 +14,24 @@ connectDB();
 const app = express();
 const server = http.createServer(app);
 const io = socketio(server, {
-    cors: { origin: '*' },
+    cors: { 
+        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        credentials: true 
+    },
     transports: ["websocket"],
     pingTimeout: 60000,   // ← ADD
     pingInterval: 25000,  // ← ADD
-});  // For now, open CORS; tighten later
+});
 
-app.use(helmet());
+app.use(helmet({
+    crossOriginResourcePolicy: { policy: "cross-origin" }
+}));
+app.use(cookieParser()); // ← Add this BEFORE routes
 app.use(cors({
-    origin: '*', // temporary for local testing
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Must be specific when credentials: true
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 app.use(express.json());
 app.use('/api/auth', authRoutes);
