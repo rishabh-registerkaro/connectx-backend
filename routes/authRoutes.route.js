@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, login, logout } = require('../controllers/authController.controller');
+const { register, login, logout, googleAuth } = require('../controllers/authController.controller');
 const protect = require('../middlewares/authMiddleware');
 const router = express.Router();
 const User = require('../models/User.model');
@@ -7,6 +7,7 @@ const User = require('../models/User.model');
 router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);
+router.post('/google', googleAuth);
 
 
 router.get('/me', protect, async (req, res) => {
