@@ -89,6 +89,17 @@ module.exports = (io) => {
     });
 
     // =====================================================================
+    // 1-TO-1 REACTIONS
+    // =====================================================================
+
+    socket.on("send-reaction", ({ roomId, emoji }) => {
+      if (!rooms[roomId]) return;
+      const isInRoom = rooms[roomId].some((u) => u.id === socket.id);
+      if (!isInRoom) return;
+      socket.to(roomId).emit("receive-reaction", { emoji });
+    });
+
+    // =====================================================================
     // GROUP ROOMS (mesh, max 10 people, admin admission)
     // =====================================================================
 
