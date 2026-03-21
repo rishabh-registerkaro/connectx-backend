@@ -220,6 +220,35 @@ module.exports = (io) => {
     });
 
     // =====================================================================
+    // GROUP CHAT
+    // =====================================================================
+
+    socket.on(
+      "group-chat-message",
+      ({ roomId, message, userName, timeStamp }) => {
+        const room = groupRooms[roomId];
+        if (!room) return;
+        const isInRoom = room.participants.some((u) => u.id === socket.id);
+        if (!isInRoom) return;
+        // Broadcast to everyone else in the room
+        socket.to(roomId).emit("group-chat-message", {
+          message,
+          userName,
+          timeStamp,
+          fromId: socket.id,
+        });
+      },
+    );
+
+    socket.on("group-chat-typing", ({ roomId, userName, isTyping }) => {
+      const room = groupRooms[roomId];
+      if (!room) return;
+      const isInRoom = room.participants.some((u) => u.id === socket.id);
+      if (!isInRoom) return;
+      socket.to(roomId).emit("group-chat-typing", { userName, isTyping });
+    });
+
+    // =====================================================================
     // DISCONNECT — clean up both room types
     // =====================================================================
 
