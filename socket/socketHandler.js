@@ -249,6 +249,45 @@ module.exports = (io) => {
     });
 
     // =====================================================================
+    // GROUP REACTIONS  ← NEW
+    // =====================================================================
+
+    socket.on("group-reaction", ({ roomId, emoji, userName }) => {
+      const room = groupRooms[roomId];
+      if (!room) return;
+      const isInRoom = room.participants.some((u) => u.id === socket.id);
+      if (!isInRoom) return;
+      socket
+        .to(roomId)
+        .emit("group-reaction", { emoji, userName, socketId: socket.id });
+    });
+
+    // =====================================================================
+    // GROUP RAISE HAND  ← NEW
+    // =====================================================================
+
+    socket.on("group-raise-hand", ({ roomId, userName, isRaised }) => {
+      const room = groupRooms[roomId];
+      if (!room) return;
+      const isInRoom = room.participants.some((u) => u.id === socket.id);
+      if (!isInRoom) return;
+      socket
+        .to(roomId)
+        .emit("group-hand-raised", { socketId: socket.id, userName, isRaised });
+    });
+
+    // =====================================================================
+    // GROUP MUTE ALL (admin only)  ← NEW
+    // =====================================================================
+
+    socket.on("group-mute-all", ({ roomId }) => {
+      const room = groupRooms[roomId];
+      if (!room) return;
+      if (room.admin.id !== socket.id) return;
+      socket.to(roomId).emit("group-mute-all");
+    });
+
+    // =====================================================================
     // DISCONNECT — clean up both room types
     // =====================================================================
 
