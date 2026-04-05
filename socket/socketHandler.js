@@ -121,6 +121,20 @@ module.exports = (io) => {
       }
       const room = groupRooms[roomId];
 
+      // -- Guard: already a participant -- dont reporecess
+      const alreadyParticipant = room.participants.some(
+        (u) => u.id === socket.id,
+      );
+      if (alreadyParticipant) {
+        return;
+      }
+
+      // -- Guard: already in waiting room
+      const alreadyWaiting = room.waitingRoom.some((u) => u.id === socket.id);
+      if (alreadyWaiting) {
+        return;
+      }
+
       // Room is full
       if (room.participants.length >= MAX_GROUP_PARTICIPANTS) {
         socket.emit("group-room-full");
@@ -155,7 +169,11 @@ module.exports = (io) => {
       const targetSocket = io.sockets.sockets.get(socketId);
       if (!targetSocket) return;
 
-      targetSocket.join(roomId);
+      // Only join if not already in the Socket.IO room
+      const socketRooms = targetSocket.rooms;
+      if (!socketRooms.has(roomId)) {
+        targetSocket.join(roomId);
+      }
 
       // Tell admitted user who is already in the room
       const existingPeers = room.participants
