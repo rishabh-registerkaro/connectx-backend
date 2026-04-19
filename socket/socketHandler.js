@@ -28,6 +28,10 @@ module.exports = (io) => {
 
       if (!rooms[roomId]) rooms[roomId] = [];
 
+      // Remove any stale entry for this userName (handles socket reconnect
+      // where new socket ID arrives before old socket's disconnect fires)
+      rooms[roomId] = rooms[roomId].filter((u) => u.userName !== userName);
+
       if (rooms[roomId].length >= 2) {
         socket.emit("room-full");
         return;
@@ -128,7 +132,10 @@ module.exports = (io) => {
             .map((p) => ({ socketId: p.id, userName: p.userName }));
 
           // Tell the rejoining user who is already in the room
-          socket.emit("group-admitted", { participants: existingPeers, roomId });
+          socket.emit("group-admitted", {
+            participants: existingPeers,
+            roomId,
+          });
           socket.emit("group-joined", { isAdmin });
 
           // Tell every existing peer to open a new WebRTC connection to this user
@@ -139,7 +146,9 @@ module.exports = (io) => {
             });
           });
 
-          console.log(`[Group] ${userName} reconnected to ${roomId} (isAdmin: ${isAdmin})`);
+          console.log(
+            `[Group] ${userName} reconnected to ${roomId} (isAdmin: ${isAdmin})`,
+          );
           return;
         }
       }
@@ -398,21 +407,34 @@ module.exports = (io) => {
             if (currentRoom.participants.length > 0) {
               currentRoom.admin = currentRoom.participants[0];
               io.to(currentRoom.admin.id).emit("group-you-are-admin");
-              console.log(`[Group] ${currentRoom.admin.userName} is new admin of ${savedRoomId}`);
+              console.log(
+                `[Group] ${currentRoom.admin.userName} is new admin of ${savedRoomId}`,
+              );
             } else {
               delete groupRooms[savedRoomId];
-              console.log(`[Group] Room ${savedRoomId} deleted — no participants left`);
+              console.log(
+                `[Group] Room ${savedRoomId} deleted — no participants left`,
+              );
             }
           }
 
           // Clean up empty room
-          if (groupRooms[savedRoomId] && currentRoom.participants.length === 0) {
+          if (
+            groupRooms[savedRoomId] &&
+            currentRoom.participants.length === 0
+          ) {
             delete groupRooms[savedRoomId];
           }
         }, RECONNECT_GRACE_MS);
 
-        reconnectTimers[reconnectKey] = { timer, oldSocketId: socket.id, isAdmin: wasAdmin };
-        console.log(`[Group] ${savedUserName} disconnected — waiting ${RECONNECT_GRACE_MS}ms for reconnect`);
+        reconnectTimers[reconnectKey] = {
+          timer,
+          oldSocketId: socket.id,
+          isAdmin: wasAdmin,
+        };
+        console.log(
+          `[Group] ${savedUserName} disconnected — waiting ${RECONNECT_GRACE_MS}ms for reconnect`,
+        );
       }
     });
   });
