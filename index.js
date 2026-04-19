@@ -19,8 +19,8 @@ const io = socketio(server, {
     credentials: true,
   },
   transports: ["websocket", "polling"],
-  pingInterval: 20000,
-  pingTimeout: 10000,
+  pingInterval: 25000,
+  pingTimeout: 20000,
   upgradeTimeout: 30000,
   allowUpgrades: true,
 });
