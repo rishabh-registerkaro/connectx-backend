@@ -117,7 +117,7 @@ module.exports = (io) => {
       const reconnectKey = `${roomId}:${userName}`;
       if (reconnectTimers[reconnectKey]) {
         clearTimeout(reconnectTimers[reconnectKey].timer);
-        const { isAdmin } = reconnectTimers[reconnectKey];
+        const { isAdmin, oldSocketId } = reconnectTimers[reconnectKey];
         delete reconnectTimers[reconnectKey];
 
         const room = groupRooms[roomId];
@@ -140,6 +140,10 @@ module.exports = (io) => {
 
           // Tell every existing peer to open a new WebRTC connection to this user
           existingPeers.forEach((p) => {
+            //  remove the ghost tile from existing peers' UI
+            io.to(p.socketId).emit("group-peer-left", {
+              socketId: oldSocketId,
+            });
             io.to(p.socketId).emit("group-new-peer", {
               socketId: socket.id,
               userName,
