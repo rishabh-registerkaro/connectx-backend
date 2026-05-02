@@ -356,6 +356,49 @@ module.exports = (io) => {
     });
 
     // =====================================================================
+    // GROUP INTENTIONAL LEAVE — bypasses the 12s reconnect grace period
+    // =====================================================================
+
+    socket.on("leave-group-room", ({ roomId }) => {
+      const room = groupRooms[roomId];
+      if (!room) return;
+
+      const userInfo = room.participants.find((u) => u.id === socket.id);
+      if (!userInfo) return;
+
+      const wasAdmin = room.admin.id === socket.id;
+
+      // cancel any pending reconnect timer so this user can't ghost-rejoin
+
+      const reconnectKey = `${roomId}:${userInfo.userName}`;
+      if (reconnectTimers[reconnectKey]) {
+        clearTimeout(reconnectTimers[reconnectKey].timer);
+        delete reconnectTimers[reconnectKey];
+      }
+
+      // Remove from room immediately
+      room.participants = room.participants.filter((u) => u.id !== socket.id);
+      room.waitingRoom = room.waitingRoom.filter((u) => u.id !== socket.id);
+
+      // Notify everyone instantly - no 12s wait
+      io.to(roomId).emit("group-peer-left", { socketId: socket.id });
+
+      // Promote new admin if needed
+      if (wasAdmin) {
+        if (room.participants.length > 0) {
+          room.admin = room.participants[0];
+          io.to(room.admin.id).emit("group-you-are-admin");
+        } else {
+          delete groupRooms[roomId];
+        }
+      }
+
+      if (groupRooms[roomId] && room.participants.length === 0) {
+        delete groupRooms[roomId];
+      }
+    });
+
+    // =====================================================================
     // DISCONNECT — clean up both room types
     // =====================================================================
 
