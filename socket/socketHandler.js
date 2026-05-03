@@ -399,6 +399,36 @@ module.exports = (io) => {
     });
 
     // =====================================================================
+    // GROUP KICK (admin only)
+    // =====================================================================
+
+    socket.on("kick-participant", ({ roomId, socketId }) => {
+      const room = groupRooms[roomId];
+      if (!room) return;
+      if (room.admin.id !== socket.id) return;
+
+      const userInfo = room.participants.find((u) => u.id === socketId);
+      if (!userInfo) return;
+
+      // Remove from participants
+      room.participants = room.participants.filter((u) => u.id !== socketId);
+
+      // cancel any reconnect timer for thisuser
+      // Cancel any reconnect timer for this user so they can't ghost-rejoin
+      const reconnectKey = `${roomId}:${userInfo.userName}`;
+      if (reconnectTimers[reconnectKey]) {
+        clearTimeout(reconnectTimers[reconnectKey].timer);
+        delete reconnectTimers[reconnectKey];
+      }
+
+      // Tell the kicked user
+      io.to(socketId).emit("group-kicked");
+
+      // Tell everyone else immediately
+      io.to(roomId).emit("group-peer-left", { socketId });
+    });
+
+    // =====================================================================
     // DISCONNECT — clean up both room types
     // =====================================================================
 
